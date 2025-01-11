@@ -1,6 +1,6 @@
-require('./keep_alive.js');
-
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
+
+require('./keep_alive.js'); // Keep the bot alive
 
 // Bot token and configurations
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN; // Bot token from environment variables
@@ -19,10 +19,13 @@ const client = new Client({
 
 // Channel, role, and user-specific configurations
 const RECEIVING_CHANNEL_ID = '1327442375299301399'; // Channel to monitor
-const SENDING_CHANNEL_ID = '1323430775001055373'; // Channel to send the messages
+const SENDING_CHANNEL_ID = '1324963962596495421'; // Channel to send the messages
 const ROLE_ID_TO_PING = '1326051133705293824'; // Replace with the role ID to ping
 const TIKTOK_USERNAME = 'Tophiachubackup'; // TikTok username for the live notification
 const REACTION_LOG_CHANNEL_ID = '1283557143273799680'; // Replace with your reaction log channel ID
+
+let lastNotificationTimestamp = 0;
+const NOTIFICATION_COOLDOWN = 30000; // 30 seconds cooldown
 
 // Reaction Logging Queue
 const reactionQueue = [];
@@ -101,7 +104,11 @@ client.on('messageCreate', async (message) => {
             const isFromSpecificWebhook =
                 message.webhookId && message.content.includes('<@&1327451062860386334>'); // Replace with a unique pattern in the webhook's messages
 
-            if (isFromSpecificWebhook) {
+            const currentTimestamp = Date.now();
+
+            if (isFromSpecificWebhook && currentTimestamp - lastNotificationTimestamp > NOTIFICATION_COOLDOWN) {
+                lastNotificationTimestamp = currentTimestamp;
+
                 const targetChannel = await client.channels.fetch(SENDING_CHANNEL_ID);
 
                 if (targetChannel && targetChannel.isTextBased()) {
