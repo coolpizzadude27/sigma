@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
-const keep_alive = require('./keep_alive.js')
+
 // Bot token and configurations
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN; // Bot token from environment variables
 const CLIENT_ID = '1324961446777454642'; // Replace with your bot's client ID
@@ -197,7 +197,8 @@ client.on('interactionCreate', async (interaction) => {
         const accountsList = TIKTOK_USERNAMES.map((username, index) => `${index + 1}. ${username}`).join('\n');
         await interaction.reply(`📄 **Monitored Accounts:**\n${accountsList}`);
     } else if (commandName === 'ping') {
-        const sent = await interaction.reply({ content: 'Pong!', fetchReply: true });
+        await interaction.reply({ content: 'Pong!' });
+        const sent = await interaction.fetchReply();
         const latency = sent.createdTimestamp - interaction.createdTimestamp;
         const apiLatency = Math.round(client.ws.ping);
         await interaction.editReply(`🏓 Pong! Latency: **${latency}ms**, API Latency: **${apiLatency}ms**.`);
