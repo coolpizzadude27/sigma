@@ -25,7 +25,7 @@ const TIKTOK_USERNAME = 'Tophiachubackup'; // TikTok username for the live notif
 const REACTION_LOG_CHANNEL_ID = '1283557143273799680'; // Replace with your reaction log channel ID
 
 let lastNotificationTimestamp = 0;
-const NOTIFICATION_COOLDOWN = 30000; // 30 seconds cooldown
+const NOTIFICATION_COOLDOWN = 10000; // 30 seconds cooldown
 
 // Reaction Logging Queue
 const reactionQueue = [];
