@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
-
+const keep_alive = require('./keep_alive.js')
 // Bot token and configurations
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN; // Bot token from environment variables
 const CLIENT_ID = '1324961446777454642'; // Replace with your bot's client ID
