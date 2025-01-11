@@ -1,23 +1,4 @@
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
-const http = require('http');
-const keep_alive = require('./keep_alive.js')
-
-// Set up a basic web server to keep the bot running on some platforms
-try {
-    const PORT = 8080; // Port for the web server
-    http.createServer((req, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end('Bot is running!');
-    }).listen(PORT, () => {
-        console.log(`Web server running on port ${PORT}`);
-    });
-} catch (err) {
-    if (err.code === 'EADDRINUSE') {
-        console.error('Port is already in use. Skipping web server creation.');
-    } else {
-        throw err;
-    }
-}
 
 // Bot token and configurations
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN; // Bot token from environment variables
@@ -36,7 +17,7 @@ const client = new Client({
 
 // Channel, role, and user-specific configurations
 const RECEIVING_CHANNEL_ID = '1327442375299301399'; // Channel to monitor
-const SENDING_CHANNEL_ID = '1323430775001055373'; // Channel to send the messages
+const SENDING_CHANNEL_ID = '1324963962596495421'; // Channel to send the messages
 const ROLE_ID_TO_PING = '1248125180685844550'; // Replace with the role ID to ping
 const TIKTOK_USERNAME = 'Tophiachubackup'; // TikTok username for the live notification
 const REACTION_LOG_CHANNEL_ID = '1283557143273799680'; // Replace with your reaction log channel ID
