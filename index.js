@@ -1,3 +1,5 @@
+require('./keep_alive.js');
+
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
 
 // Bot token and configurations
