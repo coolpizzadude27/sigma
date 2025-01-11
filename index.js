@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
 const http = require('http');
+const keep_alive = require('./keep_alive.js')
 
 // Set up a basic web server to keep the bot running on some platforms
 try {
