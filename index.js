@@ -17,7 +17,7 @@ const client = new Client({
 
 // Channel, role, and user-specific configurations
 const RECEIVING_CHANNEL_ID = '1327442375299301399'; // Channel to monitor
-const SENDING_CHANNEL_ID = '1324963962596495421'; // Channel to send the messages
+const SENDING_CHANNEL_ID = '1323430775001055373'; // Channel to send the messages
 const ROLE_ID_TO_PING = '1248125180685844550'; // Replace with the role ID to ping
 const TIKTOK_USERNAME = 'Tophiachubackup'; // TikTok username for the live notification
 const REACTION_LOG_CHANNEL_ID = '1283557143273799680'; // Replace with your reaction log channel ID
