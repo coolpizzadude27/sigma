@@ -24,6 +24,7 @@ const SENDING_CHANNEL_ID = '1323430775001055373'; // Channel to send the message
 const ROLE_ID_TO_PING = '1248125180685844550'; // Replace with the role ID to ping
 const TIKTOK_USERNAME = 'Tophiachubackup'; // TikTok username for the live notification
 const REACTION_LOG_CHANNEL_ID = '1283557143273799680'; // Replace with your reaction log channel ID
+const KICK_LOG_CHANNEL_ID = '1324963962596495421';
 
 let lastNotificationTimestamp = 0;
 const NOTIFICATION_COOLDOWN = 10000; // 30 seconds cooldown
@@ -169,14 +170,14 @@ client.on('guildMemberAdd', async (member) => {
     const accountCreationDate = member.user.createdAt;
     const accountAgeDays = Math.floor((Date.now() - accountCreationDate) / (1000 * 60 * 60 * 24));
 
-    console.log(`🔎 Checking ${member.user.tag}: Account age = ${accountAgeDays} days | Min required = ${minAccountAge} days`);
+    console.log(`🔎 Checking ${member.user.tag} | Account Age: ${accountAgeDays} days | Min Required: ${minAccountAge} days`);
 
     if (accountAgeDays < minAccountAge) {
         const reason = `Your account is too new to join this server. Minimum required age is ${minAccountAge} days.`;
-        
+
         try {
             await member.send(reason);
-            console.log(`📨 DM sent to ${member.user.tag}.`);
+            console.log(`📨 DM sent to ${member.user.tag}`);
         } catch (error) {
             console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
         }
@@ -184,12 +185,33 @@ client.on('guildMemberAdd', async (member) => {
         try {
             await member.kick(reason);
             console.log(`⛔ Kicked ${member.user.tag} for being underage.`);
+
+            // Log the kick in a designated channel
+            const logChannel = await client.channels.fetch(KICK_LOG_CHANNEL_ID);
+            if (logChannel) {
+                const embed = new EmbedBuilder()
+                    .setColor('#FF0000')
+                    .setTitle('🚨 User Kicked')
+                    .setDescription(`A user was kicked for having an account age below the required limit.`)
+                    .addFields(
+                        { name: '👤 User', value: `<@${member.user.id}> (${member.user.tag})`, inline: true },
+                        { name: '📅 Account Age', value: `${accountAgeDays} days`, inline: true },
+                        { name: '⛔ Reason', value: `Account too new (Minimum: ${minAccountAge} days)` }
+                    )
+                    .setTimestamp()
+                    .setFooter({ text: 'Account Age Enforcement System' });
+
+                await logChannel.send({ embeds: [embed] });
+            } else {
+                console.error('⚠️ Kick log channel not found.');
+            }
         } catch (error) {
             console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
         }
+    } else {
+        console.log(`✅ ${member.user.tag} meets the account age requirement.`);
     }
 });
-
 // Slash Commands
 const commands = [
     {
