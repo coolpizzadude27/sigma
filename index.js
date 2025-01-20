@@ -115,75 +115,20 @@ async function processReactionQueue() {
 
 
 // Handle TikTok Live Notification
-client.on('messageCreate', async (message) => {
-    // Ignore messages from bots unless they're from a webhook
-    if (message.author.bot && !message.webhookId) return;
-
-    // Check if the message is from the specified receiving channel
-    if (message.channel.id === RECEIVING_CHANNEL_ID) {
-        try {
-            // Identify the webhook message using a specific pattern
-            const isFromSpecificWebhook =
-                message.webhookId && message.content.includes('<@&1327451062860386334>'); // Replace with a unique pattern in the webhook's messages
-
-            const currentTimestamp = Date.now();
-
-            if (isFromSpecificWebhook && currentTimestamp - lastNotificationTimestamp > NOTIFICATION_COOLDOWN) {
-                lastNotificationTimestamp = currentTimestamp;
-
-                const targetChannel = await client.channels.fetch(SENDING_CHANNEL_ID);
-
-                if (targetChannel && targetChannel.isTextBased()) {
-                    const liveLink = `https://www.tiktok.com/@tophiachubackup/live`;
-
-                    // Check bot permissions for mentioning roles
-                    const botMember = await targetChannel.guild.members.fetch(client.user.id);
-                    if (!botMember.permissions.has('MentionEveryone')) {
-                        console.error('Bot lacks permission to mention roles.');
-                        await targetChannel.send('❌ Bot does not have permission to mention roles.');
-                        return;
-                    }
-
-                    // Send the embed
-                    const embed = new EmbedBuilder()
-                        .setColor('#4482ff')
-                        .setTitle(`🐧 ${TIKTOK_USERNAME} is live on TikTok!`)
-                        .setDescription(`🔴 Don't miss the live stream!`)
-                        .setTimestamp()
-                        .setFooter({ text: 'Join the live now!' });
-
-                    await targetChannel.send({
-                        content: `<@&${ROLE_ID_TO_PING}> 🔔 **The Beast Is Live!🧌**`,
-                        embeds: [embed],
-                    });
-
-                    // Send the TikTok live link
-                    await targetChannel.send(liveLink);
-                    console.log('Live notification sent successfully.');
-                } else {
-                    console.error('Target channel not found or not text-based.');
-                }
-            }
-        } catch (error) {
-            console.error('Error sending live notification:', error.message);
-        }
-    }
-});
-
 client.on('guildMemberAdd', async (member) => {
-    const discordEpoch = 1420070400000; // Discord's epoch (January 1, 2015)
-    const creationTimestamp = (BigInt(member.id) >> 22n) + BigInt(discordEpoch);
-    const accountCreationDate = new Date(Number(creationTimestamp));
+    console.log(`🔎 Member Joined: ${member.user.tag} (ID: ${member.id})`);
+
+    const accountCreationDate = member.user.createdAt;
     const accountAgeDays = Math.floor((Date.now() - accountCreationDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    console.log(`🔎 Checking ${member.user.tag} | Account Age: ${accountAgeDays} days | Min Required: ${minAccountAge} days`);
+    console.log(`📅 Account Age of ${member.user.tag}: ${accountAgeDays} days (Minimum Required: ${minAccountAge} days)`);
 
     if (accountAgeDays < minAccountAge) {
         const reason = `Your account is too new to join this server. Minimum required age is ${minAccountAge} days.`;
 
         try {
             await member.send(reason);
-            console.log(`📨 DM sent to ${member.user.tag}`);
+            console.log(`📨 Successfully sent DM to ${member.user.tag}`);
         } catch (error) {
             console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
         }
@@ -195,28 +140,7 @@ client.on('guildMemberAdd', async (member) => {
         setTimeout(async () => {
             try {
                 await member.kick(reason);
-                console.log(`⛔ Kicked ${member.user.tag} for being underage.`);
-
-                // Log the kick in the designated channel
-                const logChannel = await client.channels.fetch(KICK_LOG_CHANNEL_ID);
-                if (logChannel) {
-                    const embed = new EmbedBuilder()
-                        .setColor('#FF0000')
-                        .setTitle('🚨 User Kicked')
-                        .setDescription(`A user was kicked for having an account age below the required limit.`)
-                        .addFields(
-                            { name: '👤 User', value: `<@${member.user.id}> (${member.user.tag})`, inline: true },
-                            { name: '📅 Account Age', value: `${accountAgeDays} days`, inline: true },
-                            { name: '⛔ Reason', value: `Account too new (Minimum: ${minAccountAge} days)` }
-                        )
-                        .setTimestamp()
-                        .setFooter({ text: 'Account Age Enforcement System' });
-
-                    await logChannel.send({ embeds: [embed] });
-                    console.log(`📄 Kick logged for ${member.user.tag}`);
-                } else {
-                    console.error('⚠️ Kick log channel not found.');
-                }
+                console.log(`✅ Successfully kicked ${member.user.tag} from the server.`);
             } catch (error) {
                 console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
             }
@@ -226,6 +150,40 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
+client.on('guildMemberAdd', async (member) => {
+    console.log(`🔎 Member Joined: ${member.user.tag} (ID: ${member.id})`);
+
+    const accountCreationDate = member.user.createdAt;
+    const accountAgeDays = Math.floor((Date.now() - accountCreationDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    console.log(`📅 Account Age of ${member.user.tag}: ${accountAgeDays} days (Minimum Required: ${minAccountAge} days)`);
+
+    if (accountAgeDays < minAccountAge) {
+        const reason = `Your account is too new to join this server. Minimum required age is ${minAccountAge} days.`;
+
+        try {
+            await member.send(reason);
+            console.log(`📨 Successfully sent DM to ${member.user.tag}`);
+        } catch (error) {
+            console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
+        }
+
+        // Add a 1-2 second delay before kicking
+        const delay = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
+        console.log(`⏳ Waiting ${delay / 1000} seconds before kicking ${member.user.tag}...`);
+
+        setTimeout(async () => {
+            try {
+                await member.kick(reason);
+                console.log(`✅ Successfully kicked ${member.user.tag} from the server.`);
+            } catch (error) {
+                console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
+            }
+        }, delay);
+    } else {
+        console.log(`✅ ${member.user.tag} meets the account age requirement.`);
+    }
+});
 
 // Slash Commands
 const commands = [
