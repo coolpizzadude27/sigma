@@ -186,36 +186,44 @@ client.on('guildMemberAdd', async (member) => {
             console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
         }
 
-        try {
-            await member.kick(reason);
-            console.log(`⛔ Kicked ${member.user.tag} for being underage.`);
+        // Add a 1-2 second delay before kicking
+        const delay = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000; // Random delay between 1s and 2s
+        console.log(`⏳ Waiting ${delay / 1000} seconds before kicking ${member.user.tag}...`);
 
-            // Log the kick in the designated channel
-            const logChannel = await client.channels.fetch(KICK_LOG_CHANNEL_ID);
-            if (logChannel) {
-                const embed = new EmbedBuilder()
-                    .setColor('#FF0000')
-                    .setTitle('🚨 User Kicked')
-                    .setDescription(`A user was kicked for having an account age below the required limit.`)
-                    .addFields(
-                        { name: '👤 User', value: `<@${member.user.id}> (${member.user.tag})`, inline: true },
-                        { name: '📅 Account Age', value: `${accountAgeDays} days`, inline: true },
-                        { name: '⛔ Reason', value: `Account too new (Minimum: ${minAccountAge} days)` }
-                    )
-                    .setTimestamp()
-                    .setFooter({ text: 'Account Age Enforcement System' });
+        setTimeout(async () => {
+            try {
+                await member.kick(reason);
+                console.log(`⛔ Kicked ${member.user.tag} for being underage.`);
 
-                await logChannel.send({ embeds: [embed] });
-            } else {
-                console.error('⚠️ Kick log channel not found.');
+                // Log the kick in the designated channel
+                const logChannel = await client.channels.fetch(KICK_LOG_CHANNEL_ID);
+                if (logChannel) {
+                    const embed = new EmbedBuilder()
+                        .setColor('#FF0000')
+                        .setTitle('🚨 User Kicked')
+                        .setDescription(`A user was kicked for having an account age below the required limit.`)
+                        .addFields(
+                            { name: '👤 User', value: `<@${member.user.id}> (${member.user.tag})`, inline: true },
+                            { name: '📅 Account Age', value: `${accountAgeDays} days`, inline: true },
+                            { name: '⛔ Reason', value: `Account too new (Minimum: ${minAccountAge} days)` }
+                        )
+                        .setTimestamp()
+                        .setFooter({ text: 'Account Age Enforcement System' });
+
+                    await logChannel.send({ embeds: [embed] });
+                    console.log(`📄 Kick logged for ${member.user.tag}`);
+                } else {
+                    console.error('⚠️ Kick log channel not found.');
+                }
+            } catch (error) {
+                console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
             }
-        } catch (error) {
-            console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
-        }
+        }, delay); // Delay execution
     } else {
         console.log(`✅ ${member.user.tag} meets the account age requirement.`);
     }
 });
+
 // Slash Commands
 const commands = [
     {
