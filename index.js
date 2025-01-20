@@ -7,6 +7,19 @@ require('./keep_alive.js'); // Keep the bot alive
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN; // Bot token from environment variables
 const CLIENT_ID = '1324961446777454642'; // Replace with your bot's client ID
 const GUILD_ID = '1245163900173946910'; // Replace with your server ID
+const SETTINGS_FILE = './settings.json';
+const KICK_LOG_CHANNEL_ID = '1324963962596495421'; // Replace with your log channel ID
+
+// Load settings
+const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+let minAccountAge = settings.minAccountAge;
+
+function updateMinAccountAge(days) {
+    settings.minAccountAge = days;
+    minAccountAge = days; // Updates the in-memory variable instantly
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    console.log(`✅ Minimum account age updated to ${minAccountAge} days.`);
+}
 
 // Initialize Discord Client
 const client = new Client({
@@ -186,7 +199,7 @@ client.on('guildMemberAdd', async (member) => {
             await member.kick(reason);
             console.log(`⛔ Kicked ${member.user.tag} for being underage.`);
 
-            // Log the kick in a designated channel
+            // Log the kick in the designated channel
             const logChannel = await client.channels.fetch(KICK_LOG_CHANNEL_ID);
             if (logChannel) {
                 const embed = new EmbedBuilder()
@@ -292,10 +305,7 @@ client.on('interactionCreate', async (interaction) => {
             return interaction.reply({ content: '❌ Minimum account age cannot be negative.', ephemeral: true });
         }
 
-        minAccountAge = days;
-        settings.minAccountAge = days;
-        fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-
+        updateMinAccountAge(days); // Updates instantly without restarting the bot
         await interaction.reply(`✅ Minimum account age has been set to **${minAccountAge}** days.`);
     }
 });
