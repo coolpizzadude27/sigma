@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
+const fs = require('fs');
 
 require('./keep_alive.js'); // Keep the bot alive
 
@@ -28,14 +29,13 @@ let lastNotificationTimestamp = 0;
 const NOTIFICATION_COOLDOWN = 10000; // 30 seconds cooldown
 
 const SETTINGS_FILE = './settings.json';
-
-if (!fs.existsSync(SETTINGS_FILE)) {
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ minAccountAge: 7 }, null, 2));
-}
-
 const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
-let minAccountAge = settings.minAccountAge;
+let minAccountAge = settings.minAccountAge; // Load stored value
 
+// Function to save settings back to the file
+function saveSettings() {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
 // Reaction Logging Queue
 const reactionQueue = [];
 let isProcessingQueue = false;
