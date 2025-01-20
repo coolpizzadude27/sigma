@@ -262,7 +262,12 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName, options } = interaction;
 
     if (!WHITELISTED_USERS.includes(user.id)) {
-        return await interaction.reply({ content: '❌ You are not allowed to use this command.', ephemeral: true });
+        try {
+            await interaction.reply({ content: '❌ You are not allowed to use this command.', ephemeral: true });
+        } catch (error) {
+            console.error(`⚠️ Failed to reply to unauthorized user (${user.tag}): ${error.message}`);
+        }
+        return; // Prevent further execution
     }
 
     if (commandName === 'mc') {
@@ -298,6 +303,9 @@ client.on('interactionCreate', async (interaction) => {
 
         updateMinAccountAge(days); // Updates instantly without restarting the bot
         await interaction.reply(`✅ Minimum account age has been set to **${minAccountAge}** days.`);
+    } catch (error) {
+            console.error(`❌ Error handling /setage command: ${error.message}`);
+        }
     }
 });
 
