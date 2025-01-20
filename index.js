@@ -259,15 +259,11 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
 
-    const { commandName, options } = interaction;
+    const { commandName, user, options } = interaction;
 
-    if (!WHITELISTED_USERS.includes(user.id)) {
-        try {
-            await interaction.reply({ content: '❌ You are not allowed to use this command.', ephemeral: true });
-        } catch (error) {
-            console.error(`⚠️ Failed to reply to unauthorized user (${user.tag}): ${error.message}`);
-        }
-        return; // Prevent further execution
+    if (!WHITELISTED_USERS.has(user.id)) {
+        await interaction.reply({ content: '❌ You are not authorized to use this command.', ephemeral: true });
+        return;
     }
 
     if (commandName === 'mc') {
