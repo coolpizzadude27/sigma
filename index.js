@@ -212,34 +212,6 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-const cooldowns = new Set(); // Store users in cooldown
-
-client.on('messageCreate', async (message) => {
-    // Ignore messages from bots
-    if (message.author.bot) return;
-
-    // Use regex to check if "fat" is a separate word
-    if (/\bfat\b/.test(message.content.toLowerCase())) {
-        // Check if the user is in cooldown
-        if (cooldowns.has(message.author.id)) return;
-
-        // Add user to cooldown
-        cooldowns.add(message.author.id);
-
-        try {
-            await message.reply(`<@!1141175309580898364>`);
-        } catch (error) {
-            console.error('Error sending auto-reply:', error.message);
-        }
-
-        // Remove user from cooldown after 2 seconds
-        setTimeout(() => {
-            cooldowns.delete(message.author.id);
-        }, 2000);
-    }
-});
-
-
 // Slash Commands
 const commands = [
     {
