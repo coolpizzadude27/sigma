@@ -45,6 +45,9 @@ const ROLE_ID_TO_PING = '1248125180685844550'; // Replace with the role ID to pi
 const TIKTOK_USERNAME = 'Tophiachubackup'; // TikTok username for the live notification
 const REACTION_LOG_CHANNEL_ID = '1283557143273799680'; // Replace with your reaction log channel ID
 const KICK_LOG_CHANNEL_ID = '1324963962596495421';
+const AGE_ROLES_LOG_CHANNEL_ID = '1329707855737262171'; // Replace with the actual channel ID
+const MINOR_ROLE_ID = '1251014508135186495'; // Replace with the Minor role ID
+const ADULT_ROLE_ID = '1251016396616237089'; // Replace with the 18+ role ID
 
 let lastNotificationTimestamp = 0;
 const NOTIFICATION_COOLDOWN = 10000; // 30 seconds cooldown
@@ -210,6 +213,29 @@ client.on('guildMemberAdd', async (member) => {
         }, delay);
     } else {
         console.log(`✅ ${member.user.tag} meets the account age requirement.`);
+    }
+});
+
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+    const logChannel = await client.channels.fetch(AGE_ROLES_LOG_CHANNEL_ID);
+    if (!logChannel) return console.error('⚠️ Age roles log channel not found!');
+
+    const hadMinorRole = oldMember.roles.cache.has(MINOR_ROLE_ID);
+    const hasMinorRole = newMember.roles.cache.has(MINOR_ROLE_ID);
+    const hadAdultRole = oldMember.roles.cache.has(ADULT_ROLE_ID);
+    const hasAdultRole = newMember.roles.cache.has(ADULT_ROLE_ID);
+
+    let logMessage = null;
+
+    if (hadMinorRole && !hasMinorRole && hasAdultRole) {
+        logMessage = `🔞 **${newMember.user.tag}** (<@${newMember.id}>) **switched from Minor to 18+ role.**`;
+    } else if (hadAdultRole && !hasAdultRole && hasMinorRole) {
+        logMessage = `⚠️ **${newMember.user.tag}** (<@${newMember.id}>) **switched from 18+ to Minor role.**`;
+    }
+
+    if (logMessage) {
+        await logChannel.send(logMessage);
+        console.log(`✅ Logged age role change: ${logMessage}`);
     }
 });
 
