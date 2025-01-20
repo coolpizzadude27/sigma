@@ -212,23 +212,33 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
+const cooldowns = new Set(); // Store users in cooldown
+
 client.on('messageCreate', async (message) => {
     // Ignore messages from bots
     if (message.author.bot) return;
 
-    // Check if the message contains the word "fat"
-    if (message.content.toLowerCase().includes('fat')) {
+    // Split message into words and check for an exact match of "fat"
+    const words = message.content.toLowerCase().split(/\s+/);
+    if (words.includes('fat')) {
+        // Check if the user is in cooldown
+        if (cooldowns.has(message.author.id)) return;
+
+        // Add user to cooldown
+        cooldowns.add(message.author.id);
+
         try {
-            await message.reply({
-                content: `<@!1141175309580898364>`,
-                allowedMentions: { users: [], roles: [] } // Prevents pinging anyone
-            });
+            await message.reply(`<@!1141175309580898364>`);
         } catch (error) {
             console.error('Error sending auto-reply:', error.message);
         }
+
+        // Remove user from cooldown after 2 seconds
+        setTimeout(() => {
+            cooldowns.delete(message.author.id);
+        }, 2000);
     }
 });
-
 
 // Slash Commands
 const commands = [
