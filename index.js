@@ -171,8 +171,10 @@ client.on('messageCreate', async (message) => {
 });
 
 client.on('guildMemberAdd', async (member) => {
-    const accountCreationDate = member.user.createdAt;
-    const accountAgeDays = Math.floor((Date.now() - accountCreationDate) / (1000 * 60 * 60 * 24));
+    const discordEpoch = 1420070400000; // Discord's epoch (January 1, 2015)
+    const creationTimestamp = (BigInt(member.id) >> 22n) + BigInt(discordEpoch);
+    const accountCreationDate = new Date(Number(creationTimestamp));
+    const accountAgeDays = Math.floor((Date.now() - accountCreationDate.getTime()) / (1000 * 60 * 60 * 24));
 
     console.log(`🔎 Checking ${member.user.tag} | Account Age: ${accountAgeDays} days | Min Required: ${minAccountAge} days`);
 
@@ -187,7 +189,7 @@ client.on('guildMemberAdd', async (member) => {
         }
 
         // Add a 1-2 second delay before kicking
-        const delay = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000; // Random delay between 1s and 2s
+        const delay = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
         console.log(`⏳ Waiting ${delay / 1000} seconds before kicking ${member.user.tag}...`);
 
         setTimeout(async () => {
@@ -218,11 +220,12 @@ client.on('guildMemberAdd', async (member) => {
             } catch (error) {
                 console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
             }
-        }, delay); // Delay execution
+        }, delay);
     } else {
         console.log(`✅ ${member.user.tag} meets the account age requirement.`);
     }
 });
+
 
 // Slash Commands
 const commands = [
