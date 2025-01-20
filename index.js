@@ -116,38 +116,58 @@ async function processReactionQueue() {
 
 
 // Handle TikTok Live Notification
-client.on('guildMemberAdd', async (member) => {
-    console.log(`🔎 Member Joined: ${member.user.tag} (ID: ${member.id})`);
+client.on('messageCreate', async (message) => {
+    // Ignore messages from bots unless they're from a webhook
+    if (message.author.bot && !message.webhookId) return;
 
-    const accountCreationDate = member.user.createdAt;
-    const accountAgeDays = Math.floor((Date.now() - accountCreationDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    console.log(`📅 Account Age of ${member.user.tag}: ${accountAgeDays} days (Minimum Required: ${minAccountAge} days)`);
-
-    if (accountAgeDays < minAccountAge) {
-        const reason = `Your account is too new to join this server. Minimum required age is ${minAccountAge} days.`;
-
+    // Check if the message is from the specified receiving channel
+    if (message.channel.id === RECEIVING_CHANNEL_ID) {
         try {
-            await member.send(reason);
-            console.log(`📨 Successfully sent DM to ${member.user.tag}`);
-        } catch (error) {
-            console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
-        }
+            // Identify the webhook message using a specific pattern
+            const isFromSpecificWebhook =
+                message.webhookId && message.content.includes('<@&1327451062860386334>'); // Replace with a unique pattern in the webhook's messages
 
-        // Add a 1-2 second delay before kicking
-        const delay = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
-        console.log(`⏳ Waiting ${delay / 1000} seconds before kicking ${member.user.tag}...`);
+            const currentTimestamp = Date.now();
 
-        setTimeout(async () => {
-            try {
-                await member.kick(reason);
-                console.log(`✅ Successfully kicked ${member.user.tag} from the server.`);
-            } catch (error) {
-                console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
+            if (isFromSpecificWebhook && currentTimestamp - lastNotificationTimestamp > NOTIFICATION_COOLDOWN) {
+                lastNotificationTimestamp = currentTimestamp;
+
+                const targetChannel = await client.channels.fetch(SENDING_CHANNEL_ID);
+
+                if (targetChannel && targetChannel.isTextBased()) {
+                    const liveLink = `https://www.tiktok.com/@tophiachubackup/live`;
+
+                    // Check bot permissions for mentioning roles
+                    const botMember = await targetChannel.guild.members.fetch(client.user.id);
+                    if (!botMember.permissions.has('MentionEveryone')) {
+                        console.error('Bot lacks permission to mention roles.');
+                        await targetChannel.send('❌ Bot does not have permission to mention roles.');
+                        return;
+                    }
+
+                    // Send the embed
+                    const embed = new EmbedBuilder()
+                        .setColor('#4482ff')
+                        .setTitle(`🐧 ${TIKTOK_USERNAME} is live on TikTok!`)
+                        .setDescription(`🔴 Don't miss the live stream!`)
+                        .setTimestamp()
+                        .setFooter({ text: 'Join the live now!' });
+
+                    await targetChannel.send({
+                        content: `<@&${ROLE_ID_TO_PING}> 🔔 **The Beast Is Live!🧌**`,
+                        embeds: [embed],
+                    });
+
+                    // Send the TikTok live link
+                    await targetChannel.send(liveLink);
+                    console.log('Live notification sent successfully.');
+                } else {
+                    console.error('Target channel not found or not text-based.');
+                }
             }
-        }, delay);
-    } else {
-        console.log(`✅ ${member.user.tag} meets the account age requirement.`);
+        } catch (error) {
+            console.error('Error sending live notification:', error.message);
+        }
     }
 });
 
