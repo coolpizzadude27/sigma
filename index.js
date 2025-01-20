@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActivityType, PresenceUpdateStatus } = require('discord.js');
 const fs = require('fs');
 
 require('./keep_alive.js'); // Keep the bot alive
@@ -300,6 +300,15 @@ client.on('interactionCreate', async (interaction) => {
 // Bot Ready Event
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
+
+    // Set bot status and activity
+    client.user.setPresence({
+        status: PresenceUpdateStatus.DoNotDisturb, // Sets "Do Not Disturb" status
+        activities: [{
+            name: "Rupaul is big", // Custom status message
+            type: ActivityType.Playing // You can change this to Watching, Listening, etc.
+        }]
+    });
 });
 
 // Start the Bot
