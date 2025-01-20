@@ -60,6 +60,12 @@ async function processReactionQueue() {
         }
 
         const embeds = batch.map(({ user, reaction }) => {
+            // Get the emoji image URL (only works for custom emojis)
+            let emojiImage = null;
+            if (reaction.emoji.id) {
+                emojiImage = `https://cdn.discordapp.com/emojis/${reaction.emoji.id}.png`;
+            }
+
             return new EmbedBuilder()
                 .setColor('#00FF00')
                 .setAuthor({
@@ -76,7 +82,8 @@ async function processReactionQueue() {
                 .setFooter({
                     text: `Message ID: ${reaction.message.id}`,
                 })
-                .setTimestamp();
+                .setTimestamp()
+                .setThumbnail(emojiImage); // Add the emoji image if available
         });
 
         try {
@@ -91,6 +98,7 @@ async function processReactionQueue() {
 
     isProcessingQueue = false;
 }
+
 
 // Handle TikTok Live Notification
 client.on('messageCreate', async (message) => {
@@ -153,7 +161,7 @@ let minAccountAge = 7; // Default minimum account age in days
 client.on('guildMemberAdd', async (member) => {
     const accountCreationDate = member.user.createdAt;
     const accountAgeDays = Math.floor((Date.now() - accountCreationDate) / (1000 * 60 * 60 * 24));
-    
+
     if (accountAgeDays < minAccountAge) {
         const reason = `Your account is too new to join this server. Minimum required age is ${minAccountAge} days.`;
         try {
@@ -169,11 +177,11 @@ client.on('guildMemberAdd', async (member) => {
 const commands = [
     {
         name: 'mc',
-        description: 'Checks if specific accounts are live. (Whitelist only)',
+        description: 'Checks if specific accounts are live.',
     },
     {
         name: 'listaccounts',
-        description: 'Shows the list of monitored accounts. (Whitelist only)',
+        description: 'Shows the list of monitored accounts.',
     },
     {
         name: 'ping',
@@ -181,11 +189,11 @@ const commands = [
     },
     {
         name: 'setage',
-        description: 'Sets the minimum account age (in days) required to join. (Whitelist only)',
+        description: 'Sets the minimum account age (in days) required to join.',
         options: [
             {
                 name: 'days',
-                type: 'INTEGER',
+                type: 4, // Correct type for INTEGER
                 description: 'Minimum account age in days.',
                 required: true,
             },
@@ -218,7 +226,6 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.reply('Checking live statuses... Please wait.');
         const liveAccounts = [];
 
-        // Replace TIKTOK_USERNAMES with an actual array if necessary
         for (const username of TIKTOK_USERNAMES) {
             const status = await getTikTokLiveStatus(username);
             if (status.isLive) {
