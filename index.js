@@ -303,10 +303,7 @@ client.on('interactionCreate', async (interaction) => {
 
         updateMinAccountAge(days); // Updates instantly without restarting the bot
         await interaction.reply(`✅ Minimum account age has been set to **${minAccountAge}** days.`);
-    } catch (error) {
-            console.error(`❌ Error handling /setage command: ${error.message}`);
-        }
-    }
+    } 
 });
 
 // Bot Ready Event
