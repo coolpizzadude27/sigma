@@ -41,14 +41,6 @@ const KICK_LOG_CHANNEL_ID = '1324963962596495421';
 let lastNotificationTimestamp = 0;
 const NOTIFICATION_COOLDOWN = 10000; // 30 seconds cooldown
 
-const SETTINGS_FILE = './settings.json';
-const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
-let minAccountAge = settings.minAccountAge; // Load stored value
-
-// Function to save settings back to the file
-function saveSettings() {
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-}
 // Reaction Logging Queue
 const reactionQueue = [];
 let isProcessingQueue = false;
