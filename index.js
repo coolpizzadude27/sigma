@@ -13,11 +13,11 @@ const SETTINGS_FILE = './settings.json';
 const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
 let minAccountAge = settings.minAccountAge;
 
-//const WHITELISTED_USERS = [
-   // '1155372852569178192 ', // wendy
-   // '176989883531788288', // connor
-   // '1171104046980014221' // deven
-//];
+const WHITELISTED_USERS = new Set([
+    '1155372852569178192', // Wendy
+    '176989883531788288',  // Connor
+    '1171104046980014221'  // Deven
+]);
 
 function updateMinAccountAge(days) {
     settings.minAccountAge = days;
@@ -259,7 +259,11 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
 
-    const { commandName, options } = interaction;
+    const { commandName, user, options } = interaction;
+
+    if (!WHITELISTED_USERS.has(user.id)) {
+        return interaction.reply({ content: '❌ You are not authorized to use this command.', ephemeral: true });
+    }
     
     if (commandName === 'mc') {
         await interaction.reply('Checking live statuses... Please wait.');
