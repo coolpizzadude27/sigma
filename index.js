@@ -218,9 +218,8 @@ client.on('messageCreate', async (message) => {
     // Ignore messages from bots
     if (message.author.bot) return;
 
-    // Split message into words and check for an exact match of "fat"
-    const words = message.content.toLowerCase().split(/\s+/);
-    if (words.includes('fat')) {
+    // Use regex to check if "fat" is a separate word
+    if (/\bfat\b/.test(message.content.toLowerCase())) {
         // Check if the user is in cooldown
         if (cooldowns.has(message.author.id)) return;
 
@@ -239,6 +238,7 @@ client.on('messageCreate', async (message) => {
         }, 2000);
     }
 });
+
 
 // Slash Commands
 const commands = [
