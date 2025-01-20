@@ -8,7 +8,6 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN; // Bot token from environment v
 const CLIENT_ID = '1324961446777454642'; // Replace with your bot's client ID
 const GUILD_ID = '1245163900173946910'; // Replace with your server ID
 const SETTINGS_FILE = './settings.json';
-const KICK_LOG_CHANNEL_ID = '1324963962596495421'; // Replace with your log channel ID
 
 // Load settings
 const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
