@@ -212,6 +212,24 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
+client.on('messageCreate', async (message) => {
+    // Ignore messages from bots
+    if (message.author.bot) return;
+
+    // Check if the message contains the word "fat"
+    if (message.content.toLowerCase().includes('fat')) {
+        try {
+            await message.reply({
+                content: `<@!1141175309580898364>`,
+                allowedMentions: { users: [], roles: [] } // Prevents pinging anyone
+            });
+        } catch (error) {
+            console.error('Error sending auto-reply:', error.message);
+        }
+    }
+});
+
+
 // Slash Commands
 const commands = [
     {
