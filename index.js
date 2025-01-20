@@ -13,6 +13,12 @@ const SETTINGS_FILE = './settings.json';
 const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
 let minAccountAge = settings.minAccountAge;
 
+const WHITELISTED_USERS = [
+    '1155372852569178192 ', // wendy
+    '176989883531788288', // connor
+    '1171104046980014221' // deven
+];
+
 function updateMinAccountAge(days) {
     settings.minAccountAge = days;
     minAccountAge = days; // Updates the in-memory variable instantly
@@ -180,7 +186,7 @@ client.on('guildMemberAdd', async (member) => {
     console.log(`📅 Account Age of ${member.user.tag}: ${accountAgeDays} days (Minimum Required: ${minAccountAge} days)`);
 
     if (accountAgeDays < minAccountAge) {
-        const reason = `Your account is too new to join this server. Minimum required age is ${minAccountAge} days.`;
+        const reason = `Your account is too new to join this server.`;
 
         try {
             await member.send(reason);
@@ -191,7 +197,7 @@ client.on('guildMemberAdd', async (member) => {
 
         // Add a 1-2 second delay before kicking
         const delay = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
-        console.log(`⏳ Waiting ${delay / 1000} seconds before kicking ${member.user.tag}...`);
+        console.log(`⏳ Waiting ${delay / 500} seconds before kicking ${member.user.tag}...`);
 
         setTimeout(async () => {
             try {
@@ -254,6 +260,10 @@ client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
 
     const { commandName, options } = interaction;
+
+    if (!WHITELISTED_USERS.includes(user.id)) {
+        return await interaction.reply({ content: '❌ You are not allowed to use this command.', ephemeral: true });
+    }
 
     if (commandName === 'mc') {
         await interaction.reply('Checking live statuses... Please wait.');
