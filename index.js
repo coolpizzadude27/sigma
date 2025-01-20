@@ -27,6 +27,15 @@ const REACTION_LOG_CHANNEL_ID = '1283557143273799680'; // Replace with your reac
 let lastNotificationTimestamp = 0;
 const NOTIFICATION_COOLDOWN = 10000; // 30 seconds cooldown
 
+const SETTINGS_FILE = './settings.json';
+
+if (!fs.existsSync(SETTINGS_FILE)) {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ minAccountAge: 7 }, null, 2));
+}
+
+const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+let minAccountAge = settings.minAccountAge;
+
 // Reaction Logging Queue
 const reactionQueue = [];
 let isProcessingQueue = false;
@@ -156,20 +165,28 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-let minAccountAge = 7; // Default minimum account age in days
-
 client.on('guildMemberAdd', async (member) => {
     const accountCreationDate = member.user.createdAt;
     const accountAgeDays = Math.floor((Date.now() - accountCreationDate) / (1000 * 60 * 60 * 24));
 
+    console.log(`🔎 Checking ${member.user.tag}: Account age = ${accountAgeDays} days | Min required = ${minAccountAge} days`);
+
     if (accountAgeDays < minAccountAge) {
         const reason = `Your account is too new to join this server. Minimum required age is ${minAccountAge} days.`;
+        
         try {
             await member.send(reason);
+            console.log(`📨 DM sent to ${member.user.tag}.`);
         } catch (error) {
-            console.error(`Failed to DM ${member.user.tag}: ${error.message}`);
+            console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
         }
-        await member.kick(reason).catch(err => console.error(`Failed to kick ${member.user.tag}: ${err.message}`));
+
+        try {
+            await member.kick(reason);
+            console.log(`⛔ Kicked ${member.user.tag} for being underage.`);
+        } catch (error) {
+            console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
+        }
     }
 });
 
@@ -189,7 +206,7 @@ const commands = [
     },
     {
         name: 'setage',
-        description: 'Sets the minimum account age (in days) required to join.',
+        description: 'Sets the minimum account age (in days) required to join. (Whitelist Required)',
         options: [
             {
                 name: 'days',
@@ -254,6 +271,9 @@ client.on('interactionCreate', async (interaction) => {
         }
 
         minAccountAge = days;
+        settings.minAccountAge = days;
+        fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+
         await interaction.reply(`✅ Minimum account age has been set to **${minAccountAge}** days.`);
     }
 });
