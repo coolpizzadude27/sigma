@@ -148,19 +148,48 @@ client.on('messageCreate', async (message) => {
     }
 });
 
+let minAccountAge = 7; // Default minimum account age in days
+
+client.on('guildMemberAdd', async (member) => {
+    const accountCreationDate = member.user.createdAt;
+    const accountAgeDays = Math.floor((Date.now() - accountCreationDate) / (1000 * 60 * 60 * 24));
+    
+    if (accountAgeDays < minAccountAge) {
+        const reason = `Your account is too new to join this server. Minimum required age is ${minAccountAge} days.`;
+        try {
+            await member.send(reason);
+        } catch (error) {
+            console.error(`Failed to DM ${member.user.tag}: ${error.message}`);
+        }
+        await member.kick(reason).catch(err => console.error(`Failed to kick ${member.user.tag}: ${err.message}`));
+    }
+});
+
 // Slash Commands
 const commands = [
     {
         name: 'mc',
-        description: 'Checks if specific accounts are live.',
+        description: 'Checks if specific accounts are live. (Whitelist only)',
     },
     {
         name: 'listaccounts',
-        description: 'Shows the list of monitored accounts.',
+        description: 'Shows the list of monitored accounts. (Whitelist only)',
     },
     {
         name: 'ping',
         description: 'Tests the bot latency and responsiveness.',
+    },
+    {
+        name: 'setage',
+        description: 'Sets the minimum account age (in days) required to join. (Whitelist only)',
+        options: [
+            {
+                name: 'days',
+                type: 'INTEGER',
+                description: 'Minimum account age in days.',
+                required: true,
+            },
+        ],
     },
 ];
 
@@ -183,7 +212,7 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
 
-    const { commandName } = interaction;
+    const { commandName, options } = interaction;
 
     if (commandName === 'mc') {
         await interaction.reply('Checking live statuses... Please wait.');
@@ -211,6 +240,14 @@ client.on('interactionCreate', async (interaction) => {
         const latency = sent.createdTimestamp - interaction.createdTimestamp;
         const apiLatency = Math.round(client.ws.ping);
         await interaction.editReply(`🏓 Pong! Latency: **${latency}ms**, API Latency: **${apiLatency}ms**.`);
+    } else if (commandName === 'setage') {
+        const days = options.getInteger('days');
+        if (days < 0) {
+            return interaction.reply({ content: '❌ Minimum account age cannot be negative.', ephemeral: true });
+        }
+
+        minAccountAge = days;
+        await interaction.reply(`✅ Minimum account age has been set to **${minAccountAge}** days.`);
     }
 });
 
