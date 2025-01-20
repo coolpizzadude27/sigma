@@ -16,7 +16,8 @@ let minAccountAge = settings.minAccountAge;
 const WHITELISTED_USERS = new Set([
     '1155372852569178192', // Wendy
     '176989883531788288',  // Connor
-    '1171104046980014221'  // Deven
+    '1171104046980014221', // Deven
+    '1229098218344677426'// M3ll
 ]);
 
 function updateMinAccountAge(days) {
