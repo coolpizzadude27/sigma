@@ -181,6 +181,8 @@ client.on('messageCreate', async (message) => {
     }
 });
 
+const { EmbedBuilder } = require('discord.js');
+
 client.on('guildMemberAdd', async (member) => {
     console.log(`🔎 Member Joined: ${member.user.tag} (ID: ${member.id})`);
 
@@ -205,26 +207,36 @@ client.on('guildMemberAdd', async (member) => {
             console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
         }
 
-        // Add a 1-2 second delay before kicking
-        const delay = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
-        console.log(`⏳ Waiting ${delay / 500} seconds before kicking ${member.user.tag}...`);
+        console.log(`⏳ Waiting 2 seconds before kicking ${member.user.tag}...`);
 
         setTimeout(async () => {
             try {
                 await member.kick(reason);
                 console.log(`✅ Successfully kicked ${member.user.tag} from the server.`);
 
-                // Send log message to the kick log channel
-                await logChannel.send(`🚨 **Kicked User:** ${member.user.tag} (<@${member.id}>)\n📅 **Account Age:** ${accountAgeDays} days\n❌ **Reason:** ${reason}`);
+                // Create the embed message
+                const kickEmbed = new EmbedBuilder()
+                    .setColor('#ff0000') // Red color for kick logs
+                    .setTitle('🚨 User Kicked')
+                    .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+                    .addFields(
+                        { name: '👤 User', value: `${member.user.tag} (<@${member.id}>)`, inline: false },
+                        { name: '📅 Account Age', value: `${accountAgeDays} days`, inline: true },
+                        { name: '❌ Reason', value: reason, inline: false }
+                    )
+                    .setFooter({ text: `User ID: ${member.id}` })
+                    .setTimestamp();
+
+                // Send embed to the log channel
+                await logChannel.send({ embeds: [kickEmbed] });
             } catch (error) {
                 console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
             }
-        }, delay);
+        }, 2000); // 2-second delay before kicking
     } else {
         console.log(`✅ ${member.user.tag} meets the account age requirement.`);
     }
 });
-
 
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
     const logChannel = await client.channels.fetch(AGE_ROLES_LOG_CHANNEL_ID);
