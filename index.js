@@ -263,15 +263,15 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
 const commands = [
     {
         name: 'mc',
-        description: 'Checks if specific accounts are live.',
+        description: 'Checks if specific accounts are live. (Whitelist Required)',
     },
     {
         name: 'listaccounts',
-        description: 'Shows the list of monitored accounts.',
+        description: 'Shows the list of monitored accounts. (Whitelist Required)',
     },
     {
         name: 'ping',
-        description: 'Tests the bot latency and responsiveness.',
+        description: 'Tests the bot latency and responsiveness. (Whitelist Required)',
     },
     {
         name: 'setage',
@@ -285,6 +285,10 @@ const commands = [
             },
         ],
     },
+    {
+        name: 'currentage',
+        description: 'Shows the current minimum account age required to join. (Whitelist Required)',
+    }
 ];
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
@@ -345,7 +349,16 @@ client.on('interactionCreate', async (interaction) => {
 
         updateMinAccountAge(days); // Updates instantly without restarting the bot
         await interaction.reply(`✅ Minimum account age has been set to **${minAccountAge}** days.`);
-    } 
+    } else if (commandName === 'currentage') {
+        const ageEmbed = new EmbedBuilder()
+            .setColor('#3498db') // Blue color
+            .setTitle('📅 Current Minimum Account Age')
+            .setDescription(`The minimum account age required to join this server is **${minAccountAge} days**.`)
+            .setFooter({ text: 'This prevents new accounts from joining.' })
+            .setTimestamp();
+
+        await interaction.reply({ embeds: [ageEmbed] });
+    }
 });
 
 // Bot Ready Event
