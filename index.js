@@ -189,11 +189,17 @@ client.on('guildMemberAdd', async (member) => {
 
     console.log(`📅 Account Age of ${member.user.tag}: ${accountAgeDays} days (Minimum Required: ${minAccountAge} days)`);
 
+    const logChannel = await client.channels.fetch(KICK_LOG_CHANNEL_ID);
+    if (!logChannel) {
+        console.error('⚠️ Kick log channel not found!');
+        return;
+    }
+
     if (accountAgeDays < minAccountAge) {
-        const reason = `Your account is too new to join this server.`;
+        const reason = `Account is too new (Created ${accountAgeDays} days ago).`;
 
         try {
-            await member.send(reason);
+            await member.send(`You have been removed from the server because your account is too new.`);
             console.log(`📨 Successfully sent DM to ${member.user.tag}`);
         } catch (error) {
             console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
@@ -207,6 +213,9 @@ client.on('guildMemberAdd', async (member) => {
             try {
                 await member.kick(reason);
                 console.log(`✅ Successfully kicked ${member.user.tag} from the server.`);
+
+                // Send log message to the kick log channel
+                await logChannel.send(`🚨 **Kicked User:** ${member.user.tag} (<@${member.id}>)\n📅 **Account Age:** ${accountAgeDays} days\n❌ **Reason:** ${reason}`);
             } catch (error) {
                 console.error(`❌ Failed to kick ${member.user.tag}: ${error.message}`);
             }
@@ -215,6 +224,7 @@ client.on('guildMemberAdd', async (member) => {
         console.log(`✅ ${member.user.tag} meets the account age requirement.`);
     }
 });
+
 
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
     const logChannel = await client.channels.fetch(AGE_ROLES_LOG_CHANNEL_ID);
