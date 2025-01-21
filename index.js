@@ -181,8 +181,6 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-const { EmbedBuilder } = require('discord.js');
-
 client.on('guildMemberAdd', async (member) => {
     console.log(`🔎 Member Joined: ${member.user.tag} (ID: ${member.id})`);
 
