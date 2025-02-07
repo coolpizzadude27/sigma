@@ -8,6 +8,7 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN; // Bot token from environment v
 const CLIENT_ID = '1324961446777454642'; // Replace with your bot's client ID
 const GUILD_ID = '1245163900173946910'; // Replace with your server ID
 const SETTINGS_FILE = './settings.json';
+const roleAssignmentCache = new Map();
 
 // Load settings
 const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
@@ -198,9 +199,11 @@ client.on('guildMemberAdd', async (member) => {
     if (accountAgeDays < minAccountAge) {
         const reason = `Account is too new (Created ${accountAgeDays} days ago).`;
 
+        let dmStatus = '❌'; // Default to "DM failed"
         try {
             await member.send(`You have been removed from the server because your account is too new.`);
             console.log(`📨 Successfully sent DM to ${member.user.tag}`);
+            dmStatus = '✅'; // Update to "DM succeeded"
         } catch (error) {
             console.warn(`⚠️ Failed to DM ${member.user.tag}: ${error.message}`);
         }
@@ -220,7 +223,8 @@ client.on('guildMemberAdd', async (member) => {
                     .addFields(
                         { name: '👤 User', value: `${member.user.tag} (<@${member.id}>)`, inline: false },
                         { name: '📅 Account Age', value: `${accountAgeDays} days`, inline: true },
-                        { name: '❌ Reason', value: reason, inline: false }
+                        { name: '❌ Reason', value: reason, inline: false },
+                        { name: '📩 DM\'d User', value: dmStatus, inline: true } // Add DM status
                     )
                     .setFooter({ text: `User ID: ${member.id}` })
                     .setTimestamp();
@@ -246,16 +250,45 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     const hasAdultRole = newMember.roles.cache.has(ADULT_ROLE_ID);
 
     let logMessage = null;
+    let roleChangeType = null;
 
     if (hadMinorRole && !hasMinorRole && hasAdultRole) {
-        logMessage = `🔞 **${newMember.user.tag}** (<@${newMember.id}>) **switched from Minor to 18+ role.**`;
+        roleChangeType = 'Minor to 18+';
     } else if (hadAdultRole && !hasAdultRole && hasMinorRole) {
-        logMessage = `⚠️ **${newMember.user.tag}** (<@${newMember.id}>) **switched from 18+ to Minor role.**`;
+        roleChangeType = '18+ to Minor';
     }
 
-    if (logMessage) {
-        await logChannel.send(logMessage);
-        console.log(`✅ Logged age role change: ${logMessage}`);
+    if (roleChangeType) {
+        const userId = newMember.id;
+        const previousRole = roleChangeType === 'Minor to 18+' ? MINOR_ROLE_ID : ADULT_ROLE_ID;
+        const roleAssignmentTime = roleAssignmentCache.get(`${userId}-${previousRole}`);
+
+        let durationMessage = '';
+        if (roleAssignmentTime) {
+            const duration = Date.now() - roleAssignmentTime;
+            const durationDays = Math.floor(duration / (1000 * 60 * 60 * 24));
+            const durationHours = Math.floor((duration % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const durationMinutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+            durationMessage = `\n⏳ **Duration with Role:** ${durationDays}d ${durationHours}h ${durationMinutes}m`;
+        }
+
+        const embed = new EmbedBuilder()
+            .setColor(roleChangeType === 'Minor to 18+' ? '#00FF00' : '#FF0000')
+            .setTitle(`🔞 Role Change: ${roleChangeType}`)
+            .setDescription(`**${newMember.user.tag}** (<@${newMember.id}>) has switched roles.${durationMessage}`)
+            .setThumbnail(newMember.user.displayAvatarURL({ dynamic: true }))
+            .setFooter({ text: `User ID: ${newMember.id}` })
+            .setTimestamp();
+
+        await logChannel.send({ embeds: [embed] });
+        console.log(`✅ Logged age role change: ${roleChangeType} for ${newMember.user.tag}`);
+    }
+
+    // Update the cache with the new role assignment time
+    if (hasMinorRole) {
+        roleAssignmentCache.set(`${newMember.id}-${MINOR_ROLE_ID}`, Date.now());
+    } else if (hasAdultRole) {
+        roleAssignmentCache.set(`${newMember.id}-${ADULT_ROLE_ID}`, Date.now());
     }
 });
 
