@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActivityType, PresenceUpdateStatus } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActivityType, PresenceUpdateStatus, recordRoleAssignment, getRoleAssignmentTime } = require('discord.js');
 const fs = require('fs');
 
 require('./keep_alive.js'); // Keep the bot alive
@@ -249,19 +249,20 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     const hadAdultRole = oldMember.roles.cache.has(ADULT_ROLE_ID);
     const hasAdultRole = newMember.roles.cache.has(ADULT_ROLE_ID);
 
-    let logMessage = null;
     let roleChangeType = null;
+    let previousRoleId = null;
 
     if (hadMinorRole && !hasMinorRole && hasAdultRole) {
         roleChangeType = 'Minor to 18+';
+        previousRoleId = MINOR_ROLE_ID;
     } else if (hadAdultRole && !hasAdultRole && hasMinorRole) {
         roleChangeType = '18+ to Minor';
+        previousRoleId = ADULT_ROLE_ID;
     }
 
     if (roleChangeType) {
         const userId = newMember.id;
-        const previousRole = roleChangeType === 'Minor to 18+' ? MINOR_ROLE_ID : ADULT_ROLE_ID;
-        const roleAssignmentTime = roleAssignmentCache.get(`${userId}-${previousRole}`);
+        const roleAssignmentTime = getRoleAssignmentTime(userId, previousRoleId);
 
         let durationMessage = '';
         if (roleAssignmentTime) {
@@ -284,11 +285,11 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
         console.log(`✅ Logged age role change: ${roleChangeType} for ${newMember.user.tag}`);
     }
 
-    // Update the cache with the new role assignment time
+    // Update the JSON file with the new role assignment time
     if (hasMinorRole) {
-        roleAssignmentCache.set(`${newMember.id}-${MINOR_ROLE_ID}`, Date.now());
+        recordRoleAssignment(newMember.id, MINOR_ROLE_ID);
     } else if (hasAdultRole) {
-        roleAssignmentCache.set(`${newMember.id}-${ADULT_ROLE_ID}`, Date.now());
+        recordRoleAssignment(newMember.id, ADULT_ROLE_ID);
     }
 });
 
