@@ -201,7 +201,7 @@ client.on('guildMemberAdd', async (member) => {
 
         let dmStatus = '❌'; // Default to "DM failed"
         try {
-            await member.send(`You have been removed from the server because your account is too new.`);
+            await member.send(`You have been removed from **${member.guild.name}** because your account is too new.`);
             console.log(`📨 Successfully sent DM to ${member.user.tag}`);
             dmStatus = '✅'; // Update to "DM succeeded"
         } catch (error) {
