@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActivityType, PresenceUpdateStatus} = require('discord.js');
 const fs = require('fs');
+const { initializeDB, getUserRoles, updateUserRoles } = require('./database');
 
 require('./keep_alive.js'); // Keep the bot alive
 
@@ -244,28 +245,31 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     const logChannel = await client.channels.fetch(AGE_ROLES_LOG_CHANNEL_ID);
     if (!logChannel) return console.error('⚠️ Age roles log channel not found!');
 
-    const hadMinorRole = oldMember.roles.cache.has(MINOR_ROLE_ID);
+    const userId = newMember.id;
     const hasMinorRole = newMember.roles.cache.has(MINOR_ROLE_ID);
-    const hadAdultRole = oldMember.roles.cache.has(ADULT_ROLE_ID);
     const hasAdultRole = newMember.roles.cache.has(ADULT_ROLE_ID);
 
-    let logMessage = null;
-    let roleChangeType = null;
+    // Retrieve previous role data from database
+    const previousRoles = await getUserRoles(userId);
 
-    if (hadMinorRole && !hasMinorRole && hasAdultRole) {
+    let roleChangeType = null;
+    let previousRole = null;
+    let roleAssignmentTime = null;
+
+    if (previousRoles.minor && !hasMinorRole && hasAdultRole) {
         roleChangeType = 'Minor to 18+';
-    } else if (hadAdultRole && !hasAdultRole && hasMinorRole) {
+        previousRole = 'minor';
+        roleAssignmentTime = previousRoles.minor_assigned_at;
+    } else if (previousRoles.adult && !hasAdultRole && hasMinorRole) {
         roleChangeType = '18+ to Minor';
+        previousRole = 'adult';
+        roleAssignmentTime = previousRoles.adult_assigned_at;
     }
 
     if (roleChangeType) {
-        const userId = newMember.id;
-        const previousRole = roleChangeType === 'Minor to 18+' ? MINOR_ROLE_ID : ADULT_ROLE_ID;
-        const roleAssignmentTime = roleAssignmentCache.get(`${userId}-${previousRole}`);
-
         let durationMessage = '';
         if (roleAssignmentTime) {
-            const duration = Date.now() - roleAssignmentTime;
+            const duration = Date.now() - new Date(roleAssignmentTime).getTime();
             const durationDays = Math.floor(duration / (1000 * 60 * 60 * 24));
             const durationHours = Math.floor((duration % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const durationMinutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
@@ -275,14 +279,17 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
         const embed = new EmbedBuilder()
             .setColor(roleChangeType === 'Minor to 18+' ? '#00FF00' : '#FF0000')
             .setTitle(`🔞 Role Change: ${roleChangeType}`)
-            .setDescription(`**${newMember.user.tag}** (<@${newMember.id}>) has switched roles.${durationMessage}`)
+            .setDescription(`**${newMember.user.tag}** (<@${userId}>) has switched roles.${durationMessage}`)
             .setThumbnail(newMember.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: `User ID: ${newMember.id}` })
+            .setFooter({ text: `User ID: ${userId}` })
             .setTimestamp();
 
         await logChannel.send({ embeds: [embed] });
         console.log(`✅ Logged age role change: ${roleChangeType} for ${newMember.user.tag}`);
     }
+
+    // Update stored roles in database
+    await updateUserRoles(userId, hasMinorRole, hasAdultRole);
 });
 
 // Slash Commands
