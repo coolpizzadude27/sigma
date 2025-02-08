@@ -242,15 +242,19 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
+    console.log('Guild member update detected');  // Debug log
+
     const logChannel = await client.channels.fetch(AGE_ROLES_LOG_CHANNEL_ID);
     if (!logChannel) return console.error('⚠️ Age roles log channel not found!');
+    console.log('Log channel fetched');  // Debug log
 
     const userId = newMember.id;
     const hasMinorRole = newMember.roles.cache.has(MINOR_ROLE_ID);
     const hasAdultRole = newMember.roles.cache.has(ADULT_ROLE_ID);
 
-    // Retrieve previous role data from database
+    // Retrieve previous role data from the database
     const previousRoles = await getUserRoles(userId);
+    console.log('Previous roles fetched:', previousRoles);  // Debug log
 
     let roleChangeType = null;
     let previousRole = null;
@@ -267,6 +271,8 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     }
 
     if (roleChangeType) {
+        console.log('Role change detected:', roleChangeType);  // Debug log
+
         let durationMessage = '';
         if (roleAssignmentTime) {
             const duration = Date.now() - new Date(roleAssignmentTime).getTime();
@@ -288,8 +294,9 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
         console.log(`✅ Logged age role change: ${roleChangeType} for ${newMember.user.tag}`);
     }
 
-    // Update stored roles in database
+    // Update stored roles in the database
     await updateUserRoles(userId, hasMinorRole, hasAdultRole);
+    console.log('User roles updated in the database');  // Debug log
 });
 
 // Slash Commands
