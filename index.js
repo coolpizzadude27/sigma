@@ -242,57 +242,27 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
-    console.log('Guild member update detected');  // Debug log
-
     const logChannel = await client.channels.fetch(AGE_ROLES_LOG_CHANNEL_ID);
     if (!logChannel) return console.error('⚠️ Age roles log channel not found!');
-    console.log('Log channel fetched');  // Debug log
 
-    const userId = newMember.id;
+    const hadMinorRole = oldMember.roles.cache.has(MINOR_ROLE_ID);
     const hasMinorRole = newMember.roles.cache.has(MINOR_ROLE_ID);
+    const hadAdultRole = oldMember.roles.cache.has(ADULT_ROLE_ID);
     const hasAdultRole = newMember.roles.cache.has(ADULT_ROLE_ID);
 
-    // Retrieve previous role data from the database
-    const previousRoles = await getUserRoles(userId);
-    console.log('Previous roles fetched:', previousRoles);  // Debug log
+    let logMessage = null;
 
-    let roleChangeType = null;
-    let previousRole = null;
-    let roleAssignmentTime = null;
-
-    if (previousRoles.minor && !hasMinorRole && hasAdultRole) {
-        roleChangeType = 'Minor to 18+';
-        previousRole = 'minor';
-        roleAssignmentTime = previousRoles.minor_assigned_at;
-    } else if (previousRoles.adult && !hasAdultRole && hasMinorRole) {
-        roleChangeType = '18+ to Minor';
-        previousRole = 'adult';
-        roleAssignmentTime = previousRoles.adult_assigned_at;
+    if (hadMinorRole && !hasMinorRole && hasAdultRole) {
+        logMessage = `🔞 **${newMember.user.tag}** (<@${newMember.id}>) **switched from Minor to 18+ role.**`;
+    } else if (hadAdultRole && !hasAdultRole && hasMinorRole) {
+        logMessage = `⚠️ **${newMember.user.tag}** (<@${newMember.id}>) **switched from 18+ to Minor role.**`;
     }
 
-    if (roleChangeType) {
-        console.log('Role change detected:', roleChangeType);  // Debug log
-
-        let durationMessage = '';
-        if (roleAssignmentTime) {
-            const duration = Date.now() - new Date(roleAssignmentTime).getTime();
-            const durationDays = Math.floor(duration / (1000 * 60 * 60 * 24));
-            const durationHours = Math.floor((duration % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const durationMinutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
-            durationMessage = `\n⏳ **Duration with Role:** ${durationDays}d ${durationHours}h ${durationMinutes}m`;
-        }
-
-        const embed = new EmbedBuilder()
-            .setColor(roleChangeType === 'Minor to 18+' ? '#00FF00' : '#FF0000')
-            .setTitle(`🔞 Role Change: ${roleChangeType}`)
-            .setDescription(`**${newMember.user.tag}** (<@${userId}>) has switched roles.${durationMessage}`)
-            .setThumbnail(newMember.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: `User ID: ${userId}` })
-            .setTimestamp();
-
-        await logChannel.send({ embeds: [embed] });
-        console.log(`✅ Logged age role change: ${roleChangeType} for ${newMember.user.tag}`);
+    if (logMessage) {
+        await logChannel.send(logMessage);
+        console.log(`✅ Logged age role change: ${logMessage}`);
     }
+});
 
     // Update stored roles in the database
     await updateUserRoles(userId, hasMinorRole, hasAdultRole);
