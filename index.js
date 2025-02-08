@@ -251,22 +251,46 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     const hasAdultRole = newMember.roles.cache.has(ADULT_ROLE_ID);
 
     let logMessage = null;
+    let roleChangeType = null;
 
     if (hadMinorRole && !hasMinorRole && hasAdultRole) {
-        logMessage = `🔞 **${newMember.user.tag}** (<@${newMember.id}>) **switched from Minor to 18+ role.**`;
+        roleChangeType = 'Minor to 18+';
     } else if (hadAdultRole && !hasAdultRole && hasMinorRole) {
-        logMessage = `⚠️ **${newMember.user.tag}** (<@${newMember.id}>) **switched from 18+ to Minor role.**`;
+        roleChangeType = '18+ to Minor';
     }
 
-    if (logMessage) {
-        await logChannel.send(logMessage);
-        console.log(`✅ Logged age role change: ${logMessage}`);
-    }
-});
+    if (roleChangeType) {
+        const userId = newMember.id;
+        const previousRole = roleChangeType === 'Minor to 18+' ? MINOR_ROLE_ID : ADULT_ROLE_ID;
+        const roleAssignmentTime = roleAssignmentCache.get(`${userId}-${previousRole}`);
 
-    // Update stored roles in the database
-    await updateUserRoles(userId, hasMinorRole, hasAdultRole);
-    console.log('User roles updated in the database');  // Debug log
+        let durationMessage = '';
+        if (roleAssignmentTime) {
+            const duration = Date.now() - roleAssignmentTime;
+            const durationDays = Math.floor(duration / (1000 * 60 * 60 * 24));
+            const durationHours = Math.floor((duration % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const durationMinutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+            durationMessage = `\n⏳ **Duration with Role:** ${durationDays}d ${durationHours}h ${durationMinutes}m`;
+        }
+
+        const embed = new EmbedBuilder()
+            .setColor(roleChangeType === 'Minor to 18+' ? '#00FF00' : '#FF0000')
+            .setTitle(`🔞 Role Change: ${roleChangeType}`)
+            .setDescription(`**${newMember.user.tag}** (<@${newMember.id}>) has switched roles.${durationMessage}`)
+            .setThumbnail(newMember.user.displayAvatarURL({ dynamic: true }))
+            .setFooter({ text: `User ID: ${newMember.id}` })
+            .setTimestamp();
+
+        await logChannel.send({ embeds: [embed] });
+        console.log(`✅ Logged age role change: ${roleChangeType} for ${newMember.user.tag}`);
+    }
+
+    // Update the cache with the new role assignment time
+    if (hasMinorRole) {
+        roleAssignmentCache.set(`${newMember.id}-${MINOR_ROLE_ID}`, Date.now());
+    } else if (hasAdultRole) {
+        roleAssignmentCache.set(`${newMember.id}-${ADULT_ROLE_ID}`, Date.now());
+    }
 });
 
 // Slash Commands
