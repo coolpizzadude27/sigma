@@ -186,35 +186,32 @@ client.on('messageCreate', async (message) => {
 });
 // TWITCH
 client.on('messageCreate', async (message) => {
-    // Ignore messages from bots (unless you want to allow specific bots)
-    if (message.author.bot) return;
-
     // Check if the message is from the specified Twitch receiving channel
     if (message.channel.id === RECEIVING_CHANNELTWITCH_ID) {
         try {
-            // Check if the message contains the role ping (or any other specific trigger)
-            const isTwitchLiveNotification = message.content.includes(`<@&${ROLE_ID_TO_PING}>`);
+            // Check if the message contains the role mention for triggering the live notification
+            const isTwitchLiveMention = message.content.includes('<@&1346371783242154044>');
 
             const currentTimestamp = Date.now();
 
-            // If the message is a valid Twitch live notification and the cooldown has passed
-            if (isTwitchLiveNotification && currentTimestamp - lastNotificationTimestamp > NOTIFICATION_COOLDOWN) {
+            // If it's a valid mention and the cooldown has passed
+            if (isTwitchLiveMention && currentTimestamp - lastNotificationTimestamp > NOTIFICATION_COOLDOWN) {
                 lastNotificationTimestamp = currentTimestamp;
 
-                const twitchtargetChannel = await client.channels.fetch(SENDING_CHANNEL_ID);
+                const twitchTargetChannel = await client.channels.fetch(SENDING_CHANNEL_ID);
 
-                if (twitchtargetChannel && twitchtargetChannel.isTextBased()) {
-                    const twitchliveLink = `https://www.twitch.tv/${TWITCH_USERNAME}`;
+                if (twitchTargetChannel && twitchTargetChannel.isTextBased()) {
+                    const twitchLiveLink = `https://www.twitch.tv/${TWITCH_USERNAME}`;
 
                     // Check bot permissions for mentioning roles
-                    const botMember = await twitchtargetChannel.guild.members.fetch(client.user.id);
+                    const botMember = await twitchTargetChannel.guild.members.fetch(client.user.id);
                     if (!botMember.permissions.has('MentionEveryone')) {
                         console.error('Bot lacks permission to mention roles.');
-                        await twitchtargetChannel.send('❌ Bot does not have permission to mention roles.');
+                        await twitchTargetChannel.send('❌ Bot does not have permission to mention roles.');
                         return;
                     }
 
-                    // Send the embed
+                    // Send the embed for Twitch live
                     const embed = new EmbedBuilder()
                         .setColor('#9146FF') // Twitch purple color
                         .setTitle(`🎮 ${TWITCH_USERNAME} is live on Twitch!`)
@@ -222,13 +219,13 @@ client.on('messageCreate', async (message) => {
                         .setTimestamp()
                         .setFooter({ text: 'Join the live now!' });
 
-                    await twitchtargetChannel.send({
+                    await twitchTargetChannel.send({
                         content: `<@&${ROLE_ID_TO_PING}> 🔔 **The Beast Is Live!🧌**`,
                         embeds: [embed],
                     });
 
                     // Send the Twitch live link
-                    await twitchtargetChannel.send(twitchliveLink);
+                    await twitchTargetChannel.send(twitchLiveLink);
                     console.log('Twitch live notification sent successfully.');
                 } else {
                     console.error('Target channel not found or not text-based.');
