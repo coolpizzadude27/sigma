@@ -222,13 +222,13 @@ client.on('messageCreate', async (message) => {
                         .setTimestamp()
                         .setFooter({ text: 'Join the live now!' });
 
-                    await targetChannel.send({
+                    await twitchtargetChannel.send({
                         content: `<@&${ROLE_ID_TO_PING}> 🔔 **The Beast Is Live!🧌**`,
                         embeds: [embed],
                     });
 
                     // Send the TikTok live link
-                    await targetChannel.send(twitchliveLink);
+                    await twitchtargetChannel.send(twitchliveLink);
                     console.log('Live notification sent successfully.');
                 } else {
                     console.error('Target channel not found or not text-based.');
