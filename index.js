@@ -186,25 +186,25 @@ client.on('messageCreate', async (message) => {
 });
 // TWITCH
 client.on('messageCreate', async (message) => {
-    // Ignore messages from bots unless they're from a webhook
-    if (message.author.bot && !message.webhookId) return;
+    // Ignore messages from bots (unless you want to allow specific bots)
+    if (message.author.bot) return;
 
-    // Check if the message is from the specified receiving channel
+    // Check if the message is from the specified Twitch receiving channel
     if (message.channel.id === RECEIVING_CHANNELTWITCH_ID) {
         try {
-            // Identify the webhook message using a specific pattern
-            const isFromSpecificWebhook =
-                message.webhookId && message.content.includes('<@&1346371783242154044>'); // Replace with a unique pattern in the webhook's messages
+            // Check if the message contains the role ping (or any other specific trigger)
+            const isTwitchLiveNotification = message.content.includes(`<@&${ROLE_ID_TO_PING}>`);
 
             const currentTimestamp = Date.now();
 
-            if (isFromSpecificWebhook && currentTimestamp - lastNotificationTimestamp > NOTIFICATION_COOLDOWN) {
+            // If the message is a valid Twitch live notification and the cooldown has passed
+            if (isTwitchLiveNotification && currentTimestamp - lastNotificationTimestamp > NOTIFICATION_COOLDOWN) {
                 lastNotificationTimestamp = currentTimestamp;
 
                 const twitchtargetChannel = await client.channels.fetch(SENDING_CHANNEL_ID);
 
                 if (twitchtargetChannel && twitchtargetChannel.isTextBased()) {
-                    const twitchliveLink = `https://www.twitch.tv/tophiachu`;
+                    const twitchliveLink = `https://www.twitch.tv/${TWITCH_USERNAME}`;
 
                     // Check bot permissions for mentioning roles
                     const botMember = await twitchtargetChannel.guild.members.fetch(client.user.id);
@@ -216,8 +216,8 @@ client.on('messageCreate', async (message) => {
 
                     // Send the embed
                     const embed = new EmbedBuilder()
-                        .setColor('#4482ff')
-                        .setTitle(`🐧 ${TWITCH_USERNAME} is live on Twitch!`)
+                        .setColor('#9146FF') // Twitch purple color
+                        .setTitle(`🎮 ${TWITCH_USERNAME} is live on Twitch!`)
                         .setDescription(`🟣 Don't miss the live stream!`)
                         .setTimestamp()
                         .setFooter({ text: 'Join the live now!' });
@@ -227,15 +227,15 @@ client.on('messageCreate', async (message) => {
                         embeds: [embed],
                     });
 
-                    // Send the TikTok live link
+                    // Send the Twitch live link
                     await twitchtargetChannel.send(twitchliveLink);
-                    console.log('Live notification sent successfully.');
+                    console.log('Twitch live notification sent successfully.');
                 } else {
                     console.error('Target channel not found or not text-based.');
                 }
             }
         } catch (error) {
-            console.error('Error sending live notification:', error.message);
+            console.error('Error sending Twitch live notification:', error.message);
         }
     }
 });
