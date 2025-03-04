@@ -42,9 +42,11 @@ const client = new Client({
 
 // Channel, role, and user-specific configurations
 const RECEIVING_CHANNEL_ID = '1327442375299301399'; // Channel to monitor
+const RECEIVING_CHANNELTWITCH_ID = '1346371539448238121' // Twitch notifier
 const SENDING_CHANNEL_ID = '1323430775001055373'; // Channel to send the messages
 const ROLE_ID_TO_PING = '1248125180685844550'; // Replace with the role ID to ping
-const TIKTOK_USERNAME = 'Tophiachubackup'; // TikTok username for the live notification
+const TIKTOK_USERNAME = 'Tophiachubackup';
+const TWITCH_USERNAME = 'Tophiachu';// TikTok username for the live notification
 const REACTION_LOG_CHANNEL_ID = '1283557143273799680'; // Replace with your reaction log channel ID
 const KICK_LOG_CHANNEL_ID = '1324963962596495421';
 const AGE_ROLES_LOG_CHANNEL_ID = '1329707855737262171'; // Replace with the actual channel ID
@@ -172,6 +174,61 @@ client.on('messageCreate', async (message) => {
 
                     // Send the TikTok live link
                     await targetChannel.send(liveLink);
+                    console.log('Live notification sent successfully.');
+                } else {
+                    console.error('Target channel not found or not text-based.');
+                }
+            }
+        } catch (error) {
+            console.error('Error sending live notification:', error.message);
+        }
+    }
+});
+// TWITCH
+client.on('messageCreate', async (message) => {
+    // Ignore messages from bots unless they're from a webhook
+    if (message.author.bot && !message.webhookId) return;
+
+    // Check if the message is from the specified receiving channel
+    if (message.channel.id === RECEIVING_CHANNELTWITCH_ID) {
+        try {
+            // Identify the webhook message using a specific pattern
+            const isFromSpecificWebhook =
+                message.webhookId && message.content.includes('<@&1346371783242154044>'); // Replace with a unique pattern in the webhook's messages
+
+            const currentTimestamp = Date.now();
+
+            if (isFromSpecificWebhook && currentTimestamp - lastNotificationTimestamp > NOTIFICATION_COOLDOWN) {
+                lastNotificationTimestamp = currentTimestamp;
+
+                const twitchtargetChannel = await client.channels.fetch(SENDING_CHANNEL_ID);
+
+                if (twitchtargetChannel && twitchtargetChannel.isTextBased()) {
+                    const twitchliveLink = `https://www.twitch.tv/tophiachu`;
+
+                    // Check bot permissions for mentioning roles
+                    const botMember = await twitchtargetChannel.guild.members.fetch(client.user.id);
+                    if (!botMember.permissions.has('MentionEveryone')) {
+                        console.error('Bot lacks permission to mention roles.');
+                        await twitchtargetChannel.send('❌ Bot does not have permission to mention roles.');
+                        return;
+                    }
+
+                    // Send the embed
+                    const embed = new EmbedBuilder()
+                        .setColor('#4482ff')
+                        .setTitle(`🐧 ${TWITCH_USERNAME} is live on Twitch!`)
+                        .setDescription(`🟣 Don't miss the live stream!`)
+                        .setTimestamp()
+                        .setFooter({ text: 'Join the live now!' });
+
+                    await targetChannel.send({
+                        content: `<@&${ROLE_ID_TO_PING}> 🔔 **The Beast Is Live!🧌**`,
+                        embeds: [embed],
+                    });
+
+                    // Send the TikTok live link
+                    await targetChannel.send(twitchliveLink);
                     console.log('Live notification sent successfully.');
                 } else {
                     console.error('Target channel not found or not text-based.');
